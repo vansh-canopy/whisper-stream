@@ -1,0 +1,19 @@
+[project]
+name = "streamable"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "accelerate[torch]>=1.8.1",
+    "datasets>=3.6.0",
+    "huggingface-hub>=0.33.2",
+    "librosa>=0.11.0",
+    "matplotlib>=3.10.3",
+    "pip>=25.1.1",
+    "soundfile>=0.13.1",
+    "torch>=2.7.1",
+    "torchaudio>=2.7.1",
+    "transformers>=4.53.1",
+    "wandb>=0.21.0",
+]
