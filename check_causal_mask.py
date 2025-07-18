@@ -31,8 +31,6 @@ class CausalWhisperEncoder(WhisperEncoder):
         hidden_states = inputs_embeds + self.embed_positions(all_positions)
         hidden_states = torch.nn.functional.dropout(hidden_states, p=self.dropout, training=self.training)
         
-
-        
         # Process through layers with mask
         encoder_states = () if kwargs.get('output_hidden_states', False) else None
         all_attentions = () if kwargs.get('output_attentions', False) else None
@@ -119,3 +117,5 @@ print(latents_1.shape, latents_2.shape)
 latents_delta = latents_1 - latents_2
 
 print("Latent delta shape:", latents_delta.shape)
+
+print(latents_delta[0][498])
