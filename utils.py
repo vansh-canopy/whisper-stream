@@ -44,7 +44,7 @@ def quick_check():
     print(f"Transcription: {answer}")
     
     
-def prepare_data(load_from="/mnt/disks/emilia/emilia_dataset/Emilia/EN", max_shards=1000, num_proc=200):
+def prepare_data(load_from="/mnt/disks/emilia/emilia_dataset/Emilia/EN", max_shards=2000, num_proc=200):
     tar_paths = sorted([filename for filename in os.listdir(load_from) if filename.endswith(".tar")])
     language = "en"
 

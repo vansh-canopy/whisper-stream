@@ -1,10 +1,11 @@
 import torch # type: ignore[attr-defined]
-from transformers import WhisperModel, WhisperConfig # type: ignore[attr-defined]
+from transformers import WhisperForConditionalGeneration, WhisperModel, WhisperConfig # type: ignore[attr-defined]
 from transformers.models.whisper.modeling_whisper import WhisperEncoder # type: ignore[attr-defined]
 
 class CausalWhisperEncoder(WhisperEncoder):
     def __init__(self, config: WhisperConfig):
         super().__init__(config)
+        self.causal_mask = None
 
     def _create_causal_mask(self, seq_length, device, dtype):
         mask = torch.triu(torch.ones(seq_length, seq_length, device=device), diagonal=1)
@@ -18,7 +19,7 @@ class CausalWhisperEncoder(WhisperEncoder):
         return mask.unsqueeze(0).unsqueeze(0).to(dtype)
     
     
-    def forward(self, input_features, causal_mask, **kwargs):
+    def forward(self, input_features, **kwargs):
         # Run the standard preprocessing
         inputs_embeds = torch.nn.functional.gelu(self.conv1(input_features))
         inputs_embeds = torch.nn.functional.gelu(self.conv2(inputs_embeds))
@@ -39,7 +40,7 @@ class CausalWhisperEncoder(WhisperEncoder):
             
             layer_outputs = encoder_layer(
                 hidden_states,
-                attention_mask=causal_mask,
+                attention_mask=self.causal_mask,
                 layer_head_mask=kwargs.get('head_mask', [None]*len(self.layers))[idx],
                 output_attentions=kwargs.get('output_attentions', False),
             )
@@ -69,9 +70,22 @@ class CausalWhisperModel(WhisperModel):
         self.encoder = CausalWhisperEncoder(config)
 
 
-def load_causal_whisper(model_name: str = "openai/whisper-base", device: str = "cuda"):
+class CausalWhisperForConditionalGeneration(WhisperForConditionalGeneration):
+    def __init__(self, config: WhisperConfig):
+        super().__init__(config)
+        self.model.encoder = CausalWhisperEncoder(config)
+
+
+def load_causal_whisper(model_name: str = "openai/whisper-base", 
+                        from_conditional_generation: bool = False,
+                        device: str = "cuda"):
     conf = WhisperConfig.from_pretrained(model_name)
-    model = CausalWhisperModel.from_pretrained(model_name, config=conf)
+    
+    if from_conditional_generation:
+        model = CausalWhisperForConditionalGeneration.from_pretrained(model_name, config=conf)
+    else:
+        model = CausalWhisperModel.from_pretrained(model_name, config=conf)
+
     model.to(device)
     return model
 
