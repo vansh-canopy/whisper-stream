@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+whisper_look_ahead_1/
+whisper_causal/
+wandb/

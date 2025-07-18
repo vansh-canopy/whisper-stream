@@ -2,7 +2,7 @@ import torch
 import torchaudio
 import wandb
 from transformers import Trainer, TrainingArguments, WhisperProcessor # type: ignore[attr-defined]
-from utils import prepare_data
+from utils import prepare_data, load_model
 from causal_wrapper import load_causal_whisper
 
 
@@ -34,8 +34,8 @@ class WhisperDataCollator:
         return batch
 
 
-def train():
-    LOOK_AHEAD = 5  
+def run_lookahead():
+    LOOK_AHEAD = 3  
     NUM_LATENTS = 1500
     MODEL_ID = "openai/whisper-base"
     
@@ -49,12 +49,59 @@ def train():
 
     data_collator = WhisperDataCollator(processor)
     
-    learning_rate = 1e-4
+    learning_rate = 5e-5
     per_device_batch_size = 4
     num_epochs = 1
     
     wandb.init(
         project=f"whisper-lookahead-{LOOK_AHEAD}", 
+        name=f"lr-{learning_rate}-bs-{per_device_batch_size}-epochs-{num_epochs}"
+    )
+    
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, betas=(0.9, 0.95), weight_decay=0.01)
+
+    training_args = TrainingArguments(
+        output_dir="./whisper_look_ahead_1",
+        per_device_train_batch_size=per_device_batch_size,
+        num_train_epochs=num_epochs,
+        logging_steps=10,
+        save_steps=1000,
+        eval_steps=1000,
+        warmup_steps=500,
+        save_total_limit=20,
+        learning_rate=1e-4,
+        remove_unused_columns=False,
+        report_to="wandb",
+    )
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=ds,    # type: ignore[attr-defined]
+        data_collator=data_collator,
+        optimizer=(optimizer, None)
+    )
+
+    print("Starting training...")
+    trainer.train()
+
+
+
+def run_causal():
+    print("Loading data...")
+    ds = prepare_data(max_shards=10)   # type: ignore[attr-defined]
+
+    print("Loading model...")
+    model, processor = load_model(causal=True)
+
+    data_collator = WhisperDataCollator(processor)
+    
+    learning_rate = 1e-4
+    per_device_batch_size = 4
+    num_epochs = 1
+    
+    wandb.init(
+        project=f"whisper-causal", 
         name=f"lr-{learning_rate}-bs-{per_device_batch_size}-epochs-{num_epochs}"
     )
 
@@ -81,7 +128,7 @@ def train():
 
     print("Starting training...")
     trainer.train()
-
+    
 
 if __name__ == "__main__":
-    train()
+    run_lookahead()
