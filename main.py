@@ -57,8 +57,6 @@ def run_lookahead():
         project=f"whisper-lookahead-{LOOK_AHEAD}", 
         name=f"lr-{learning_rate}-bs-{per_device_batch_size}-epochs-{num_epochs}"
     )
-    
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, betas=(0.9, 0.95), weight_decay=0.01)
 
     training_args = TrainingArguments(
         output_dir="./whisper_look_ahead_1",
@@ -69,7 +67,7 @@ def run_lookahead():
         eval_steps=1000,
         warmup_steps=500,
         save_total_limit=20,
-        learning_rate=1e-4,
+        learning_rate=learning_rate,
         remove_unused_columns=False,
         report_to="wandb",
     )
@@ -79,7 +77,6 @@ def run_lookahead():
         args=training_args,
         train_dataset=ds,    # type: ignore[attr-defined]
         data_collator=data_collator,
-        optimizer=(optimizer, None)
     )
 
     print("Starting training...")
