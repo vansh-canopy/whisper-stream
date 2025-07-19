@@ -10,5 +10,6 @@ wheels/
 .venv
 
 whisper_look_ahead_1/
+whisper_look_ahead_run/
 whisper_causal/
 wandb/
